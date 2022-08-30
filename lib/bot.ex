@@ -8,31 +8,27 @@ defmodule HannahMontana.Handlers do
       {:ok, @session_ttl}
   end
 
-  # @impl Telegram.ChatBot
-  # def handle_update(%{"message" => %{"text" => "hanna ", "chat" => %{"id" => chat_id}}}, token, _) do
-
-  #   Telegram.Api.request(token, "pong",
-  #     chat_id: chat_id,
-  #     text: "It works with Elixir!"
-  #   )
-
-  #   {:ok, 0, @session_ttl}
-  # end
-
   @impl Telegram.ChatBot
   def handle_update(%{
     "message" =>
       %{
           "message_id" => message_id,
           "sender_chat" => %{
+            "id" => sender_chat_id,
             "type" => "channel"
           },
           "chat" => %{"id" => chat_id}
       }}, token, count_state) do
-    Telegram.Api.request(token, "deleteMessage",
-      chat_id: chat_id,
-      message_id: message_id
-    )
+    {:ok, %{"linked_chat_id" => linked_chat_id}} =
+      Telegram.Api.request(token, "getChat",
+        chat_id: chat_id
+      )
+    if linked_chat_id !== sender_chat_id do
+      Telegram.Api.request(token, "deleteMessage",
+        chat_id: chat_id,
+        message_id: message_id
+      )
+    end
     {:ok, count_state, @session_ttl}
   end
 
